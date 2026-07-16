@@ -23,7 +23,7 @@ function toLocalInput(s: string) {
 }
 
 export default function JadwalUsulan() {
-  const { jadwalList, setJadwalList, toast } = useApp();
+  const { jadwalList, setJadwalList, tahunAnggaranList, toast } = useApp();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Jadwal | null>(null);
   const [form, setForm] = useState<Omit<Jadwal, "id">>(emptyForm);
@@ -197,8 +197,11 @@ export default function JadwalUsulan() {
                   <option value="" disabled>
                     Pilih tahun…
                   </option>
-                  <option value="2026">2026</option>
-                  <option value="2025">2025</option>
+                  {tahunAnggaranList.map((t) => (
+                    <option key={t.id} value={t.tahun}>
+                      {t.tahun}
+                    </option>
+                  ))}
                 </select>
               </div>
               <div>

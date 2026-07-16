@@ -471,6 +471,37 @@ export default function MonitorStatus() {
                   </div>
                 )}
 
+                {/* Nominal Final & Catatan Persetujuan */}
+                {(detailFor.status === "disetujui" || detailFor.status === "ditolak") && detailFor.nominalFinal !== undefined && (
+                  <div className={`rounded-lg border p-4 ${detailFor.status === "disetujui" ? "border-emerald-200 bg-emerald-50" : "border-red-200 bg-red-50"}`}>
+                    <h3 className={`text-sm font-semibold mb-2 ${detailFor.status === "disetujui" ? "text-emerald-800" : "text-red-800"}`}>
+                      Keputusan {detailFor.jenis}
+                    </h3>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <div className={`text-xs font-medium ${detailFor.status === "disetujui" ? "text-emerald-700" : "text-red-700"}`}>Nominal Final</div>
+                        <div className={`text-lg font-bold ${detailFor.status === "disetujui" ? "text-emerald-900" : "text-red-900"}`}>
+                          {rupiah(detailFor.nominalFinal)}
+                        </div>
+                      </div>
+                      <div>
+                        <div className={`text-xs font-medium ${detailFor.status === "disetujui" ? "text-emerald-700" : "text-red-700"}`}>Tanggal Persetujuan</div>
+                        <div className={`text-sm font-semibold ${detailFor.status === "disetujui" ? "text-emerald-900" : "text-red-900"}`}>
+                          {detailFor.tglPersetujuan || "—"}
+                        </div>
+                      </div>
+                    </div>
+                    {detailFor.catatanPersetujuan && (
+                      <div className="mt-3 pt-3 border-t border-emerald-200">
+                        <div className={`text-xs font-medium mb-1 ${detailFor.status === "disetujui" ? "text-emerald-700" : "text-red-700"}`}>Catatan Persetujuan</div>
+                        <div className={`text-sm rounded-md px-3 py-2 ${detailFor.status === "disetujui" ? "text-emerald-900 bg-emerald-100/70" : "text-red-900 bg-red-100/70"}`}>
+                          {detailFor.catatanPersetujuan}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {/* Riwayat Verifikasi & Persetujuan */}
                 {(detailFor.tglVerifikasi || detailFor.status === "disetujui") && (
                   <div className="rounded-lg border border-border bg-card p-4">
@@ -494,7 +525,7 @@ export default function MonitorStatus() {
                           </span>
                           <div>
                             <div className="text-xs text-muted-fg">Disetujui oleh {detailFor.jenis}</div>
-                            <div className="text-sm font-medium">{detailFor.tglVerifikasi || "—"}</div>
+                            <div className="text-sm font-medium">{detailFor.tglPersetujuan || "—"}</div>
                           </div>
                         </div>
                       )}

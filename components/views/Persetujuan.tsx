@@ -21,6 +21,8 @@ export default function Persetujuan({ jenis }: { jenis: JenisPersetujuan }) {
   const [tab, setTab] = useState<"masuk" | "disetujui" | "ditolak">("masuk");
   const [detailFor, setDetailFor] = useState<Usulan | null>(null);
   const [tglPersetujuan, setTglPersetujuan] = useState(today());
+  const [nominalFinal, setNominalFinal] = useState("");
+  const [catatanPersetujuan, setCatatanPersetujuan] = useState("");
 
   const set = useMemo(() => usulanList.filter((u) => u.jenis === jenis), [usulanList, jenis]);
   const masuk = set.filter((u) => u.status === "tapd");
@@ -32,7 +34,12 @@ export default function Persetujuan({ jenis }: { jenis: JenisPersetujuan }) {
   function tolak() {
     if (!detailFor) return;
     setUsulanList((list) =>
-      list.map((x) => x.id === detailFor.id ? { ...x, status: "ditolak" } : x)
+      list.map((x) => x.id === detailFor.id ? {
+        ...x,
+        status: "ditolak",
+        catatanPersetujuan: catatanPersetujuan.trim() || undefined,
+        tglPersetujuan,
+      } : x)
     );
     setDetailFor(null);
     toast("Usulan ditolak", "err");
@@ -40,11 +47,14 @@ export default function Persetujuan({ jenis }: { jenis: JenisPersetujuan }) {
 
   function setuju() {
     if (!detailFor) return;
+    const nf = Number(nominalFinal.replace(/\D/g, "")) || detailFor.nilai;
     setUsulanList((list) =>
       list.map((x) => x.id === detailFor.id ? {
         ...x,
         status: "disetujui",
-        // Simpan tanggal persetujuan jika diperlukan
+        nominalFinal: nf,
+        catatanPersetujuan: catatanPersetujuan.trim() || undefined,
+        tglPersetujuan,
       } : x)
     );
     setDetailFor(null);
@@ -221,17 +231,37 @@ export default function Persetujuan({ jenis }: { jenis: JenisPersetujuan }) {
 
                 {/* Form Persetujuan */}
                 <div className="rounded-lg border border-border bg-card p-4">
-                  <h3 className="text-sm font-semibold mb-3">Form Persetujuan</h3>
-                  <div>
-                    <label>Tanggal Persetujuan ({jenis})</label>
-                    <input
-                      type="date"
-                      value={tglPersetujuan}
-                      onChange={(e) => setTglPersetujuan(e.target.value)}
-                    />
-                    <p className="mt-1 text-xs text-muted-fg">
-                      Tanggal persetujuan dapat diubah oleh {jenis}
-                    </p>
+                  <h3 className="text-sm font-semibold mb-3">Form Persetujuan {jenis}</h3>
+                  <div className="space-y-3">
+                    <div>
+                      <label>Tanggal Persetujuan</label>
+                      <input
+                        type="date"
+                        value={tglPersetujuan}
+                        onChange={(e) => setTglPersetujuan(e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <label>Nominal Final (Rp)</label>
+                      <input
+                        inputMode="numeric"
+                        placeholder={rupiah(detailFor.nilai)}
+                        value={nominalFinal}
+                        onChange={(e) => setNominalFinal(e.target.value)}
+                      />
+                      <p className="mt-1 text-xs text-muted-fg">
+                        Nilai usulan: {rupiah(detailFor.nilai)}. Kosongkan jika tidak ada perubahan.
+                      </p>
+                    </div>
+                    <div>
+                      <label>Catatan Persetujuan</label>
+                      <textarea
+                        rows={3}
+                        value={catatanPersetujuan}
+                        onChange={(e) => setCatatanPersetujuan(e.target.value)}
+                        placeholder="Tulis catatan persetujuan..."
+                      />
+                    </div>
                   </div>
                 </div>
               </div>

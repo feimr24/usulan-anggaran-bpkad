@@ -9,6 +9,8 @@ import VerifikasiUsulan from "./views/VerifikasiUsulan";
 import Persetujuan from "./views/Persetujuan";
 import Laporan from "./views/Laporan";
 import SubKegiatanView from "./views/SubKegiatan";
+import TahunAnggaranView from "./views/TahunAnggaran";
+import AdminMonitor from "./views/AdminMonitor";
 
 export default function ViewRouter() {
   const { role, menu } = useApp();
@@ -19,6 +21,8 @@ export default function ViewRouter() {
     if (menu === "akun") return <AkunSkpd />;
     if (menu === "jadwal") return <JadwalUsulan />;
     if (menu === "subkegiatan") return <SubKegiatanView />;
+    if (menu === "tahun") return <TahunAnggaranView />;
+    if (menu === "adminmonitor") return <AdminMonitor />;
   }
   if (role === "skpd" && menu === "monitor") return <MonitorStatus />;
   if (role === "verifikator" && menu === "verifikasi") return <VerifikasiUsulan />;

@@ -42,7 +42,9 @@ export interface Usulan {
   jenis?: JenisPersetujuan;
   tglVerifikasi?: string;
   catatan?: string;
-  disetujui?: number;
+  nominalFinal?: number;
+  catatanPersetujuan?: string;
+  tglPersetujuan?: string;
   dokumen?: string;
   subKegiatanId?: string;
 }
@@ -63,6 +65,8 @@ export type MenuKey =
   | "akun"
   | "jadwal"
   | "subkegiatan"
+  | "tahun"
+  | "adminmonitor"
   | "monitor"
   | "verifikasi"
   | "ppkd"
@@ -76,4 +80,10 @@ export interface SubKegiatan {
   id: string;
   nama: string;
   deskripsi: string;
+}
+
+export interface TahunAnggaran {
+  id: string;
+  tahun: string;
+  aktif: boolean;
 }

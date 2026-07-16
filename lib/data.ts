@@ -1,4 +1,4 @@
-import { Jadwal, JenisPersetujuan, RoleDef, Skpd, StatusKey, Usulan } from "./types";
+import { Jadwal, JenisPersetujuan, RoleDef, Skpd, StatusKey, TahunAnggaran, Usulan } from "./types";
 
 export const ROLES: Record<string, RoleDef> = {
   admin: {
@@ -14,6 +14,8 @@ export const ROLES: Record<string, RoleDef> = {
       { key: "akun", label: "Akun SKPD" },
       { key: "jadwal", label: "Jadwal Usulan" },
       { key: "subkegiatan", label: "Sub Kegiatan" },
+      { key: "tahun", label: "Tahun Anggaran" },
+      { key: "adminmonitor", label: "Monitoring" },
     ],
   },
   skpd: {
@@ -187,8 +189,9 @@ export const INITIAL_USULAN: Usulan[] = [
     nilai: 320000000,
     status: "disetujui",
     jenis: "PPKD",
-    disetujui: 300000000,
+    nominalFinal: 300000000,
     tglVerifikasi: "2026-07-06",
+    tglPersetujuan: "2026-07-07",
     dokumen: "dokumen-perencanaan.pdf",
   },
   {
@@ -244,4 +247,10 @@ export const INITIAL_JADWAL: Jadwal[] = [
     ket: "Pergeseran antar sub kegiatan",
     aktif: false,
   },
+];
+
+export const INITIAL_TAHUN: TahunAnggaran[] = [
+  { id: "1", tahun: "2026", aktif: true },
+  { id: "2", tahun: "2025", aktif: false },
+  { id: "3", tahun: "2024", aktif: false },
 ];

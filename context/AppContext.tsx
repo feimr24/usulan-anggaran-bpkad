@@ -1,8 +1,8 @@
 "use client";
 
 import React, { createContext, useCallback, useContext, useMemo, useState } from "react";
-import { Jadwal, MenuKey, Role, Skpd, ToastKind, Usulan } from "../lib/types";
-import { CURRENT_SKPD, INITIAL_JADWAL, INITIAL_SKPD, INITIAL_USULAN } from "../lib/data";
+import { Jadwal, MenuKey, Role, Skpd, TahunAnggaran, ToastKind, Usulan } from "../lib/types";
+import { CURRENT_SKPD, INITIAL_JADWAL, INITIAL_SKPD, INITIAL_TAHUN, INITIAL_USULAN } from "../lib/data";
 
 interface ToastItem {
   id: string;
@@ -17,6 +17,7 @@ interface AppContextValue {
   skpdList: Skpd[];
   usulanList: Usulan[];
   jadwalList: Jadwal[];
+  tahunAnggaranList: TahunAnggaran[];
   currentSkpd: Skpd;
   toasts: ToastItem[];
 
@@ -29,6 +30,7 @@ interface AppContextValue {
   setSkpdList: React.Dispatch<React.SetStateAction<Skpd[]>>;
   setUsulanList: React.Dispatch<React.SetStateAction<Usulan[]>>;
   setJadwalList: React.Dispatch<React.SetStateAction<Jadwal[]>>;
+  setTahunAnggaranList: React.Dispatch<React.SetStateAction<TahunAnggaran[]>>;
 
   toast: (msg: string, kind?: ToastKind) => void;
   dismissToast: (id: string) => void;
@@ -44,6 +46,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [skpdList, setSkpdList] = useState<Skpd[]>(INITIAL_SKPD);
   const [usulanList, setUsulanList] = useState<Usulan[]>(INITIAL_USULAN);
   const [jadwalList, setJadwalList] = useState<Jadwal[]>(INITIAL_JADWAL);
+  const [tahunAnggaranList, setTahunAnggaranList] = useState<TahunAnggaran[]>(INITIAL_TAHUN);
 
   const [toasts, setToasts] = useState<ToastItem[]>([]);
 
@@ -86,6 +89,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       skpdList,
       usulanList,
       jadwalList,
+      tahunAnggaranList,
       currentSkpd: CURRENT_SKPD,
       toasts,
       login,
@@ -96,6 +100,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setSkpdList,
       setUsulanList,
       setJadwalList,
+      setTahunAnggaranList,
       toast,
       dismissToast,
     }),
@@ -106,6 +111,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       skpdList,
       usulanList,
       jadwalList,
+      tahunAnggaranList,
       toasts,
       login,
       logout,
