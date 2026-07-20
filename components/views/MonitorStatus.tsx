@@ -1,20 +1,14 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Eye, Plus, Save, Send, Upload, Calendar, CheckCircle2, ClipboardList, Download } from "lucide-react";
+import { Eye, Plus, Minus, Save, Send, Upload, Calendar, CheckCircle2, ClipboardList, Download } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 import { Badge, Button, Card, EmptyState, SectionHead } from "@/components/ui";
 import Modal, { DialogBody, DialogFoot, DialogHead } from "@/components/Modal";
 import DetailHighlight from "@/components/DetailHighlight";
-import { rupiah, today } from "@/lib/format";
+import { rupiah, today, parseNominal } from "@/lib/format";
+import { SUB_KEGIATAN } from "@/lib/data";
 import { StatusKey, Usulan } from "@/lib/types";
-
-// Map sub kegiatan ID ke nama untuk ditampilkan
-const SUB_KEGIATAN_MAP: Record<string, string> = {
-  "1": "Pengelolaan Pendidikan Dasar",
-  "2": "Penyediaan Alkes Fasyankes",
-  "3": "Pemeliharaan Jalan dan Drainase",
-};
 
 const FILTERS: [string, string][] = [
   ["all", "Semua"],
@@ -27,29 +21,6 @@ const FILTERS: [string, string][] = [
   ["revisi", "Revisi"],
 ];
 
-// Helper functions for formatting date and time
-function formatDateRange(buka: string, tutup: string): string {
-  if (!buka || !tutup) return "-";
-  const start = buka.split(' ')[0];
-  const end = tutup.split(' ')[0];
-  return `${start} s/d ${end}`;
-}
-
-function formatTimeRange(buka: string, tutup: string): string {
-  if (!buka || !tutup) return "-";
-  const startTime = buka.split(' ')[1] || "00:00";
-  const endTime = tutup.split(' ')[1] || "23:59";
-  return `${startTime} - ${endTime}`;
-}
-
-function formatJadwalLengkap(j: { tahun: string; tahap: string; buka: string; tutup: string }): string {
-  const bukaDate = j.buka.split(' ')[0] || "";
-  const bukaTime = j.buka.split(' ')[1] || "";
-  const tutupDate = j.tutup.split(' ')[0] || "";
-  const tutupTime = j.tutup.split(' ')[1] || "";
-  return `${j.tahun} · ${j.tahap} · Buka: ${bukaDate} ${bukaTime} · Tutup: ${tutupDate} ${tutupTime}`;
-}
-
 export default function MonitorStatus() {
   const { usulanList, setUsulanList, jadwalList, currentSkpd, toast } = useApp();
   const [filter, setFilter] = useState("all");
@@ -57,34 +28,22 @@ export default function MonitorStatus() {
   const [inputOpen, setInputOpen] = useState(false);
   const [detailFor, setDetailFor] = useState<Usulan | null>(null);
 
-  const [nilai, setNilai] = useState("");
-  const [ket, setKet] = useState("");
-  const [subKegiatanId, setSubKegiatanId] = useState("");
-
-  // Data dummy untuk sub kegiatan - dalam implementasi nyata akan diambil dari context/API
-  const [subKegiatanList] = useState([
-    {
-      id: "1",
-      kode: "5.2.03.01",
-      nama: "Pengelolaan Pendidikan Dasar",
-      deskripsi: "Kegiatan pengelolaan pendidikan dasar di tingkat SD dan SMP",
-    },
-    {
-      id: "2",
-      kode: "5.2.02.01",
-      nama: "Penyediaan Alkes Fasyankes",
-      deskripsi: "Pengadaan alat kesehatan untuk fasilitas kesehatan",
-    },
-    {
-      id: "3",
-      kode: "5.2.03.05",
-      nama: "Pemeliharaan Jalan dan Drainase",
-      deskripsi: "Pemeliharaan infrastruktur jalan dan sistem drainase",
-    },
+  // Wizard state
+  const [wizardStep, setWizardStep] = useState<1 | 2>(1);
+  const [nomorUsulan, setNomorUsulan] = useState("");
+  const [tanggalUsulan, setTanggalUsulan] = useState(today());
+  const [dokumenName, setDokumenName] = useState("");
+  const [keterangan, setKeterangan] = useState("");
+  const [entries, setEntries] = useState<Array<{ subKegiatanId: string; anggaran: string }>>([
+    { subKegiatanId: "", anggaran: "" },
   ]);
 
-  // Hanya ambil jadwal aktif
   const jadwalAktif = jadwalList.find((j) => j.aktif) || null;
+
+  const totalAnggaran = useMemo(
+    () => entries.reduce((sum, e) => sum + parseNominal(e.anggaran), 0),
+    [entries]
+  );
 
   const rows = useMemo(() =>
     usulanList.filter((u) => {
@@ -96,10 +55,33 @@ export default function MonitorStatus() {
   );
 
   function openInput() {
-    setNilai("");
-    setKet("");
-    setSubKegiatanId("");
+    setWizardStep(1);
+    setNomorUsulan("");
+    setTanggalUsulan(today());
+    setDokumenName("");
+    setKeterangan("");
+    setEntries([{ subKegiatanId: "", anggaran: "" }]);
     setInputOpen(true);
+  }
+
+  function goToStep2() {
+    if (!nomorUsulan.trim()) {
+      toast("Isi Nomor Usulan SKPD terlebih dahulu", "err");
+      return;
+    }
+    setWizardStep(2);
+  }
+
+  function updateEntry(idx: number, field: "subKegiatanId" | "anggaran", value: string) {
+    setEntries((prev) => prev.map((e, i) => (i === idx ? { ...e, [field]: value } : e)));
+  }
+
+  function addEntry() {
+    setEntries((prev) => [...prev, { subKegiatanId: "", anggaran: "" }]);
+  }
+
+  function removeEntry(idx: number) {
+    setEntries((prev) => prev.filter((_, i) => i !== idx));
   }
 
   function build(status: StatusKey) {
@@ -108,23 +90,28 @@ export default function MonitorStatus() {
       return;
     }
 
-    if (!subKegiatanId) {
-      toast("Pilih sub kegiatan terlebih dahulu", "err");
+    const validEntries = entries.filter(
+      (e) => e.subKegiatanId && parseNominal(e.anggaran) > 0
+    );
+    if (validEntries.length === 0) {
+      toast("Tambahkan minimal satu sub kegiatan dengan anggaran", "err");
       return;
     }
 
-    const selectedSubKegiatan = subKegiatanList.find(s => s.id === subKegiatanId);
-
     const newItem: Usulan = {
-      id: "USL-2026-" + String(usulanList.length + 1).padStart(3, "0"),
+      id: "USL-" + jadwalAktif.tahun + "-" + String(usulanList.length + 1).padStart(3, "0"),
+      nomorUsulan: nomorUsulan.trim(),
       skpd: currentSkpd.nama,
-      tanggal: today(),
+      tanggal: tanggalUsulan,
       tahap: jadwalAktif.tahap,
-      ket: ket.trim() || "(tanpa keterangan)",
-      nilai: Number(nilai.replace(/\D/g, "")) || 0,
+      ket: keterangan.trim(),
+      nilai: validEntries.reduce((sum, e) => sum + parseNominal(e.anggaran), 0),
       status,
-      dokumen: "dokumen-usulan-baru.pdf",
-      subKegiatanId: subKegiatanId,
+      dokumen: dokumenName || "dokumen-usulan-baru.pdf",
+      subKegiatanEntries: validEntries.map((e) => ({
+        subKegiatanId: e.subKegiatanId,
+        anggaran: parseNominal(e.anggaran),
+      })),
     };
     setUsulanList((list) => [newItem, ...list]);
   }
@@ -140,17 +127,16 @@ export default function MonitorStatus() {
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" onClick={() => {
-            // Export semua usulan yang sudah diajukan
             const usulanDiajukan = usulanList.filter((u) => u.status !== "draft");
             if (usulanDiajukan.length === 0) {
               toast("Tidak ada usulan yang bisa di-export", "err");
               return;
             }
-            const header = "ID,SKPD,Tanggal,Tahap,Keterangan,Nilai,Status,Jenis,Catatan\n";
-            const rows = usulanDiajukan.map((u) =>
-              `"${u.id}","${u.skpd}","${u.tanggal}","${u.tahap}","${u.ket}",${u.nilai},"${u.status}","${u.jenis || ""}","${u.catatan || ""}"`
+            const header = "ID,Nomor Usulan,SKPD,Tanggal,Tahap,Nilai,Status,Jenis\n";
+            const csvRows = usulanDiajukan.map((u) =>
+              `"${u.id}","${u.nomorUsulan || ""}","${u.skpd}","${u.tanggal}","${u.tahap}",${u.nilai},"${u.status}","${u.jenis || ""}"`
             ).join("\n");
-            const blob = new Blob([header + rows], { type: "text/csv" });
+            const blob = new Blob([header + csvRows], { type: "text/csv" });
             const url = URL.createObjectURL(blob);
             const a = document.createElement("a");
             a.href = url;
@@ -224,7 +210,7 @@ export default function MonitorStatus() {
                     <td className="px-4 py-3 text-sm">{u.tanggal}</td>
                     <td className="px-4 py-3 text-sm text-muted-fg">{u.tahap}</td>
                     <td className="max-w-[220px] truncate px-4 py-3 text-sm text-muted-fg">
-                      {u.ket}
+                      {u.ket || u.nomorUsulan || "-"}
                     </td>
                     <td className="px-4 py-3">
                       {u.jenis ? (
@@ -260,11 +246,14 @@ export default function MonitorStatus() {
         </div>
       </Card>
 
-      {/* Input Usulan dialog */}
+      {/* Input Usulan - 2 Step Wizard */}
       <Modal open={inputOpen} onClose={() => setInputOpen(false)} width="wide">
         <DialogHead
           title="Input Usulan Anggaran"
-          desc="Input usulan anggaran berdasarkan jadwal aktif. Pilih sub kegiatan dari daftar master."
+          desc={wizardStep === 1
+            ? "Langkah 1 dari 2: Isi data usulan dan unggah dokumen."
+            : "Langkah 2 dari 2: Isi rincian anggaran per sub kegiatan."
+          }
         />
         <DialogBody>
           <div className="space-y-4">
@@ -287,13 +276,13 @@ export default function MonitorStatus() {
                     <div>
                       <label className="text-xs text-muted-fg">Buka Usulan</label>
                       <div className="text-sm font-medium">
-                        {jadwalAktif.buka.replace(' ', ', ')}
+                        {jadwalAktif.buka.replace(" ", ", ")}
                       </div>
                     </div>
                     <div>
                       <label className="text-xs text-muted-fg">Tutup Usulan</label>
                       <div className="text-sm font-medium">
-                        {jadwalAktif.tutup.replace(' ', ', ')}
+                        {jadwalAktif.tutup.replace(" ", ", ")}
                       </div>
                     </div>
                   </div>
@@ -311,86 +300,169 @@ export default function MonitorStatus() {
               )}
             </div>
 
-            <div>
-              <label>Sub Kegiatan</label>
-              <select
-                value={subKegiatanId}
-                onChange={(e) => setSubKegiatanId(e.target.value)}
-                disabled={!subKegiatanList.length}
-              >
-                <option value="" disabled>
-                  Pilih sub kegiatan…
-                </option>
-                {subKegiatanList.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.kode} - {s.nama}
-                  </option>
+            {/* Step indicator */}
+            <div className="flex items-center gap-2 text-xs text-muted-fg">
+              <span className={`font-semibold ${wizardStep === 1 ? "text-primary" : ""}`}>
+                1. Data Usulan
+              </span>
+              <span>→</span>
+              <span className={`font-semibold ${wizardStep === 2 ? "text-primary" : ""}`}>
+                2. Sub Kegiatan & Anggaran
+              </span>
+            </div>
+
+            {/* Step 1: Data Usulan */}
+            {wizardStep === 1 && (
+              <>
+                <div>
+                  <label>Nomor Usulan SKPD</label>
+                  <input
+                    value={nomorUsulan}
+                    onChange={(e) => setNomorUsulan(e.target.value)}
+                    placeholder="Contoh: USL/DIK/2026/001"
+                  />
+                </div>
+                <div>
+                  <label>Tanggal Usulan</label>
+                  <input
+                    type="date"
+                    value={tanggalUsulan}
+                    onChange={(e) => setTanggalUsulan(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label>Unggah Dokumen (PDF)</label>
+                  <label className="flex cursor-pointer items-center gap-3 rounded-[9px] border-[1.5px] border-dashed border-input px-4 py-5 text-sm text-muted-fg hover:bg-muted/50">
+                    <Upload className="h-5 w-5" />
+                    <span>{dokumenName || "Klik untuk memilih berkas PDF, atau seret ke sini"}</span>
+                    <input
+                      type="file"
+                      accept="application/pdf"
+                      className="hidden"
+                      onChange={(e) => {
+                        const f = e.target.files?.[0];
+                        if (f) setDokumenName(f.name);
+                      }}
+                    />
+                  </label>
+                </div>
+                <div>
+                  <label>Keterangan Usulan</label>
+                  <textarea
+                    rows={3}
+                    value={keterangan}
+                    onChange={(e) => setKeterangan(e.target.value)}
+                    placeholder="Jelaskan detail usulan anggaran..."
+                  />
+                </div>
+              </>
+            )}
+
+            {/* Step 2: Sub Kegiatan & Anggaran */}
+            {wizardStep === 2 && (
+              <>
+                {entries.map((entry, idx) => (
+                  <div key={idx} className="rounded-lg border border-border bg-card p-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-semibold">Sub Kegiatan #{idx + 1}</span>
+                      {entries.length > 1 && (
+                        <button
+                          onClick={() => removeEntry(idx)}
+                          className="inline-flex items-center gap-1 text-xs text-muted-fg hover:text-danger"
+                        >
+                          <Minus className="h-3.5 w-3.5" />
+                          Hapus
+                        </button>
+                      )}
+                    </div>
+                    <div>
+                      <label>Sub Kegiatan</label>
+                      <select
+                        value={entry.subKegiatanId}
+                        onChange={(e) => updateEntry(idx, "subKegiatanId", e.target.value)}
+                      >
+                        <option value="" disabled>
+                          Pilih sub kegiatan…
+                        </option>
+                        {SUB_KEGIATAN.map((s) => (
+                          <option key={s.id} value={s.id}>
+                            {s.kode ? s.kode + " - " : ""}{s.nama}
+                          </option>
+                        ))}
+                      </select>
+                      {entry.subKegiatanId && (
+                        <p className="mt-1 text-xs text-muted-fg">
+                          {SUB_KEGIATAN.find((s) => s.id === entry.subKegiatanId)?.deskripsi}
+                        </p>
+                      )}
+                    </div>
+                    <div>
+                      <label>Anggaran (Rp)</label>
+                      <input
+                        inputMode="numeric"
+                        placeholder="0"
+                        value={entry.anggaran}
+                        onChange={(e) => updateEntry(idx, "anggaran", e.target.value)}
+                      />
+                    </div>
+                  </div>
                 ))}
-              </select>
-              {subKegiatanId && (
-                <p className="mt-1 text-xs text-muted-fg">
-                  {subKegiatanList.find(s => s.id === subKegiatanId)?.deskripsi}
-                </p>
-              )}
-            </div>
 
-            <div>
-              <label>Unggah Dokumen (PDF)</label>
-              <label className="flex cursor-pointer items-center gap-3 rounded-[9px] border-[1.5px] border-dashed border-input px-4 py-5 text-sm text-muted-fg hover:bg-muted/50">
-                <Upload className="h-5 w-5" />
-                <span>Klik untuk memilih berkas PDF, atau seret ke sini</span>
-                <input type="file" accept="application/pdf" className="hidden" />
-              </label>
-            </div>
+                <button
+                  onClick={addEntry}
+                  className="flex w-full items-center justify-center gap-2 rounded-lg border-2 border-dashed border-primary/30 bg-primary/5 py-3 text-sm font-semibold text-primary hover:bg-primary/10"
+                >
+                  <Plus className="h-4 w-4" />
+                  Tambah Sub Kegiatan
+                </button>
 
-            <div>
-              <label>Usulan Anggaran (Rp)</label>
-              <input
-                inputMode="numeric"
-                placeholder="0"
-                value={nilai}
-                onChange={(e) => setNilai(e.target.value)}
-                className="text-lg"
-              />
-              <p className="mt-1 text-xs text-muted-fg">
-                Format: 1.000.000.000
-              </p>
-            </div>
-
-            <div>
-              <label>Keterangan Usulan</label>
-              <textarea
-                rows={3}
-                value={ket}
-                onChange={(e) => setKet(e.target.value)}
-                placeholder="Jelaskan detail usulan anggaran..."
-              />
-            </div>
+                <div className="rounded-lg border border-border bg-card p-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-semibold">Total Anggaran</span>
+                    <span className="text-lg font-bold text-primary">{rupiah(totalAnggaran)}</span>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         </DialogBody>
         <DialogFoot>
-          <Button
-            variant="outline"
-            onClick={() => {
-              build("draft");
-              setInputOpen(false);
-              toast("Draft usulan disimpan");
-            }}
-          >
-            <Save className="h-[15px] w-[15px]" />
-            Simpan Draft
-          </Button>
-          <Button
-            variant="primary"
-            onClick={() => {
-              build("diajukan");
-              setInputOpen(false);
-              toast("Usulan diajukan");
-            }}
-          >
-            <Send className="h-[15px] w-[15px]" />
-            Ajukan Usulan
-          </Button>
+          {wizardStep === 2 && (
+            <Button variant="outline" onClick={() => setWizardStep(1)}>
+              Sebelumnya
+            </Button>
+          )}
+          {wizardStep === 1 && (
+            <Button variant="primary" onClick={goToStep2}>
+              Selanjutnya
+            </Button>
+          )}
+          {wizardStep === 2 && (
+            <>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  build("draft");
+                  setInputOpen(false);
+                  toast("Draft usulan disimpan");
+                }}
+              >
+                <Save className="h-[15px] w-[15px]" />
+                Simpan Draft
+              </Button>
+              <Button
+                variant="primary"
+                onClick={() => {
+                  build("diajukan");
+                  setInputOpen(false);
+                  toast("Usulan diajukan");
+                }}
+              >
+                <Send className="h-[15px] w-[15px]" />
+                Ajukan Usulan
+              </Button>
+            </>
+          )}
         </DialogFoot>
       </Modal>
 
@@ -406,26 +478,77 @@ export default function MonitorStatus() {
               <div className="space-y-4">
                 <DetailHighlight u={detailFor} />
 
-                {/* Sub Kegiatan */}
-                <div className="rounded-lg border border-border bg-card p-4">
-                  <div className="flex items-center gap-[11px]">
-                    <span className="grid h-[34px] w-[34px] place-items-center rounded-lg bg-muted text-muted-fg">
-                      <ClipboardList className="h-4 w-4" />
-                    </span>
-                    <div>
-                      <div className="text-[10.5px] font-semibold uppercase tracking-[0.05em] text-muted-fg">
-                        Sub Kegiatan
+                {/* Sub Kegiatan Entries */}
+                {detailFor.subKegiatanEntries && detailFor.subKegiatanEntries.length > 0 && (
+                  <div className="rounded-lg border border-border bg-card p-4">
+                    <div className="flex items-center gap-[11px] mb-3">
+                      <span className="grid h-[34px] w-[34px] place-items-center rounded-lg bg-muted text-muted-fg">
+                        <ClipboardList className="h-4 w-4" />
+                      </span>
+                      <div>
+                        <div className="text-[10.5px] font-semibold uppercase tracking-[0.05em] text-muted-fg">
+                          Rincian Sub Kegiatan
+                        </div>
                       </div>
-                      <div className="mt-px text-sm font-semibold">
-                        {detailFor.subKegiatanId ? (
-                          SUB_KEGIATAN_MAP[detailFor.subKegiatanId] || `ID: ${detailFor.subKegiatanId}`
-                        ) : (
-                          "Tidak tersedia"
-                        )}
+                    </div>
+                    <div className="space-y-2">
+                      {detailFor.subKegiatanEntries.map((entry, idx) => {
+                        const sk = SUB_KEGIATAN.find((s) => s.id === entry.subKegiatanId);
+                        const entryStatus = entry.status;
+                        const isRejected = entryStatus === "rejected";
+                        const isAdjusted = entryStatus === "adjusted";
+                        const isApproved = entryStatus === "approved";
+                        return (
+                          <div
+                            key={idx}
+                            className={`rounded-lg border px-3 py-2 ${
+                              isRejected
+                                ? "border-red-200 bg-red-50"
+                                : isApproved
+                                ? "border-emerald-200 bg-emerald-50"
+                                : isAdjusted
+                                ? "border-amber-200 bg-amber-50"
+                                : "border-border bg-muted/50"
+                            }`}
+                          >
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <div className="text-sm font-medium">
+                                  {sk?.nama || `ID: ${entry.subKegiatanId}`}
+                                </div>
+                                {sk?.kode && (
+                                  <div className="text-xs text-muted-fg">{sk.kode}</div>
+                                )}
+                              </div>
+                              <div className="text-right">
+                                <div className="text-sm font-semibold">{rupiah(entry.anggaran)}</div>
+                                {isRejected && (
+                                  <span className="inline-block mt-0.5 rounded-full border border-red-200 bg-red-100 px-2 py-0.5 text-[10px] font-semibold text-red-700">
+                                    Ditolak
+                                  </span>
+                                )}
+                                {isApproved && (
+                                  <span className="inline-block mt-0.5 rounded-full border border-emerald-200 bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
+                                    Disetujui
+                                  </span>
+                                )}
+                                {isAdjusted && (
+                                  <span className="inline-block mt-0.5 rounded-full border border-amber-200 bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-700">
+                                    Disesuaikan
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                      <div className="flex items-center justify-between border-t border-border pt-2 mt-2">
+                        <span className="text-sm font-semibold">Total</span>
+                        <span className="text-sm font-bold text-primary">{rupiah(detailFor.nilai)}</span>
                       </div>
                     </div>
                   </div>
-                </div>
+                )}
 
                 {/* Info Status & Jenis */}
                 <div className="grid grid-cols-2 gap-3">
@@ -502,36 +625,77 @@ export default function MonitorStatus() {
                   </div>
                 )}
 
-                {/* Riwayat Verifikasi & Persetujuan */}
-                {(detailFor.tglVerifikasi || detailFor.status === "disetujui") && (
-                  <div className="rounded-lg border border-border bg-card p-4">
-                    <h3 className="text-sm font-semibold mb-3">Riwayat Proses</h3>
-                    <div className="space-y-3">
-                      {detailFor.tglVerifikasi && (
-                        <div className="flex items-center gap-3">
-                          <span className="grid h-8 w-8 place-items-center rounded-full bg-amber-100 text-amber-700">
-                            <CheckCircle2 className="h-4 w-4" />
-                          </span>
-                          <div>
-                            <div className="text-xs text-muted-fg">Diverifikasi oleh Verifikator</div>
-                            <div className="text-sm font-medium">{detailFor.tglVerifikasi}</div>
-                          </div>
-                        </div>
-                      )}
-                      {detailFor.status === "disetujui" && (
-                        <div className="flex items-center gap-3">
-                          <span className="grid h-8 w-8 place-items-center rounded-full bg-emerald-100 text-emerald-700">
-                            <CheckCircle2 className="h-4 w-4" />
-                          </span>
-                          <div>
-                            <div className="text-xs text-muted-fg">Disetujui oleh {detailFor.jenis}</div>
-                            <div className="text-sm font-medium">{detailFor.tglPersetujuan || "—"}</div>
-                          </div>
-                        </div>
-                      )}
+                {/* Riwayat Lengkap Proses */}
+                <div className="rounded-lg border border-border bg-card p-4">
+                  <h3 className="text-sm font-semibold mb-3">Riwayat Proses</h3>
+                  <div className="space-y-3">
+                    {/* Step 1: Pengajuan */}
+                    <div className="flex items-center gap-3">
+                      <span className="grid h-8 w-8 place-items-center rounded-full bg-blue-100 text-blue-700">
+                        <CheckCircle2 className="h-4 w-4" />
+                      </span>
+                      <div className="flex-1">
+                        <div className="text-xs text-muted-fg">Diajukan oleh SKPD</div>
+                        <div className="text-sm font-medium">{detailFor.tanggal}</div>
+                        {detailFor.ket && (
+                          <div className="text-xs text-muted-fg mt-0.5">{detailFor.ket}</div>
+                        )}
+                      </div>
                     </div>
+
+                    {/* Step 2: Verifikasi */}
+                    {detailFor.tglVerifikasi && (
+                      <div className="flex items-center gap-3">
+                        <span className="grid h-8 w-8 place-items-center rounded-full bg-amber-100 text-amber-700">
+                          <CheckCircle2 className="h-4 w-4" />
+                        </span>
+                        <div className="flex-1">
+                          <div className="text-xs text-muted-fg">
+                            {detailFor.status === "revisi"
+                              ? "Dikembalikan untuk revisi oleh Verifikator"
+                              : "Diverifikasi oleh Verifikator BPKAD"}
+                          </div>
+                          <div className="text-sm font-medium">{detailFor.tglVerifikasi}</div>
+                          {detailFor.catatan && (
+                            <div className="text-xs text-muted-fg mt-0.5">Catatan: {detailFor.catatan}</div>
+                          )}
+                          {detailFor.jenis && detailFor.status !== "revisi" && (
+                            <div className="text-xs text-muted-fg mt-0.5">Diteruskan ke {detailFor.jenis}</div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Step 3: Persetujuan */}
+                    {detailFor.tglPersetujuan && (
+                      <div className="flex items-center gap-3">
+                        <span className={`grid h-8 w-8 place-items-center rounded-full ${
+                          detailFor.status === "disetujui"
+                            ? "bg-emerald-100 text-emerald-700"
+                            : "bg-red-100 text-red-700"
+                        }`}>
+                          <CheckCircle2 className="h-4 w-4" />
+                        </span>
+                        <div className="flex-1">
+                          <div className="text-xs text-muted-fg">
+                            {detailFor.status === "disetujui"
+                              ? `Disetujui oleh ${detailFor.jenis}`
+                              : `Ditolak oleh ${detailFor.jenis}`}
+                          </div>
+                          <div className="text-sm font-medium">{detailFor.tglPersetujuan}</div>
+                          {detailFor.nominalFinal !== undefined && detailFor.status === "disetujui" && (
+                            <div className="text-xs text-muted-fg mt-0.5">
+                              Nominal Final: {rupiah(detailFor.nominalFinal)}
+                            </div>
+                          )}
+                          {detailFor.catatanPersetujuan && (
+                            <div className="text-xs text-muted-fg mt-0.5">Catatan: {detailFor.catatanPersetujuan}</div>
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </div>
-                )}
+                </div>
               </div>
             </DialogBody>
             <DialogFoot between>
@@ -541,19 +705,22 @@ export default function MonitorStatus() {
               <Button
                 variant="primary"
                 onClick={() => {
-                  // Export detail usulan ke file teks
+                  const entriesText = detailFor.subKegiatanEntries?.map((e, i) => {
+                    const sk = SUB_KEGIATAN.find((s) => s.id === e.subKegiatanId);
+                    return `  ${i + 1}. ${sk?.nama || e.subKegiatanId}: ${rupiah(e.anggaran)}`;
+                  }).join("\n") || "  -";
                   const content = `DETAIL USULAN ANGGARAN\n` +
                     `========================\n\n` +
                     `ID Usulan: ${detailFor.id}\n` +
+                    `Nomor Usulan: ${detailFor.nomorUsulan || "-"}\n` +
                     `SKPD: ${detailFor.skpd}\n` +
                     `Tanggal: ${detailFor.tanggal}\n` +
-                    `Tahap: ${detailFor.tahap}\n` +
-                    `Keterangan: ${detailFor.ket}\n` +
-                    `Nilai: Rp ${detailFor.nilai.toLocaleString('id-ID')}\n` +
+                    `Tahap: ${detailFor.tahap}\n\n` +
+                    `Rincian Anggaran:\n${entriesText}\n\n` +
+                    `Total: ${rupiah(detailFor.nilai)}\n` +
                     `Dokumen: ${detailFor.dokumen || "-"}\n` +
                     `Status: ${detailFor.status}\n\n` +
-                    `Sub Kegiatan: ${detailFor.subKegiatanId ? (SUB_KEGIATAN_MAP[detailFor.subKegiatanId] || detailFor.subKegiatanId) : "-"}\n` +
-                    `Jenis Persetujuan: ${detailFor.jenis || "-"}\n\n` +
+                    `Jenis Persetujuan: ${detailFor.jenis || "-"}\n` +
                     `Catatan Verifikator: ${detailFor.catatan || "-"}\n` +
                     `Tanggal Verifikasi: ${detailFor.tglVerifikasi || "-"}\n`;
                   const blob = new Blob([content], { type: "text/plain" });

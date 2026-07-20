@@ -1,4 +1,4 @@
-import { Jadwal, JenisPersetujuan, RoleDef, Skpd, StatusKey, TahunAnggaran, Usulan } from "./types";
+import { Jadwal, JenisPersetujuan, RoleDef, Skpd, StatusKey, SubKegiatan, TahunAnggaran, Usulan } from "./types";
 
 export const ROLES: Record<string, RoleDef> = {
   admin: {
@@ -101,6 +101,27 @@ export const TAHAP = [
 
 export const JENIS: JenisPersetujuan[] = ["Sekda", "PPKD", "TAPD"];
 
+export const SUB_KEGIATAN: SubKegiatan[] = [
+  {
+    id: "1",
+    kode: "5.2.03.01",
+    nama: "Pengelolaan Pendidikan Dasar",
+    deskripsi: "Kegiatan pengelolaan pendidikan dasar di tingkat SD dan SMP",
+  },
+  {
+    id: "2",
+    kode: "5.2.02.01",
+    nama: "Penyediaan Alkes Fasyankes",
+    deskripsi: "Pengadaan alat kesehatan untuk fasilitas kesehatan",
+  },
+  {
+    id: "3",
+    kode: "5.2.03.05",
+    nama: "Pemeliharaan Jalan dan Drainase",
+    deskripsi: "Pemeliharaan infrastruktur jalan dan sistem drainase",
+  },
+];
+
 export const INITIAL_SKPD: Skpd[] = [
   {
     id: "1",
@@ -136,6 +157,7 @@ export const CURRENT_SKPD = INITIAL_SKPD[0];
 export const INITIAL_USULAN: Usulan[] = [
   {
     id: "USL-2026-001",
+    nomorUsulan: "USL/DIK/2026/001",
     skpd: "Dinas Pendidikan",
     tanggal: "2026-07-02",
     tahap: "Rancangan APBD",
@@ -145,9 +167,13 @@ export const INITIAL_USULAN: Usulan[] = [
     jenis: "TAPD",
     tglVerifikasi: "2026-07-03",
     dokumen: "usulan-rehab-sdn12.pdf",
+    subKegiatanEntries: [
+      { subKegiatanId: "1", anggaran: 1250000000 },
+    ],
   },
   {
     id: "USL-2026-002",
+    nomorUsulan: "USL/KES/2026/002",
     skpd: "Dinas Kesehatan",
     tanggal: "2026-07-03",
     tahap: "Rancangan APBD",
@@ -155,9 +181,13 @@ export const INITIAL_USULAN: Usulan[] = [
     nilai: 875000000,
     status: "verifikasi",
     dokumen: "alkes-puskesmas.pdf",
+    subKegiatanEntries: [
+      { subKegiatanId: "2", anggaran: 875000000 },
+    ],
   },
   {
     id: "USL-2026-003",
+    nomorUsulan: "USL/PUPR/2026/003",
     skpd: "Dinas PU dan Penataan Ruang",
     tanggal: "2026-07-03",
     tahap: "Pergeseran APBD",
@@ -167,9 +197,14 @@ export const INITIAL_USULAN: Usulan[] = [
     jenis: "PPKD",
     tglVerifikasi: "2026-07-04",
     dokumen: "drainase-sudirman.pdf",
+    subKegiatanEntries: [
+      { subKegiatanId: "3", anggaran: 1500000000 },
+      { subKegiatanId: "1", anggaran: 600000000 },
+    ],
   },
   {
     id: "USL-2026-004",
+    nomorUsulan: "USL/SOS/2026/004",
     skpd: "Dinas Sosial",
     tanggal: "2026-07-04",
     tahap: "Rancangan APBD",
@@ -179,9 +214,13 @@ export const INITIAL_USULAN: Usulan[] = [
     tglVerifikasi: "2026-07-05",
     catatan: "Lampirkan rincian penerima bantuan.",
     dokumen: "bansos-warga.pdf",
+    subKegiatanEntries: [
+      { subKegiatanId: "2", anggaran: 540000000 },
+    ],
   },
   {
     id: "USL-2026-005",
+    nomorUsulan: "USL/BAPEDA/2026/005",
     skpd: "Badan Perencanaan Pembangunan Daerah",
     tanggal: "2026-07-05",
     tahap: "Rancangan APBD",
@@ -193,9 +232,13 @@ export const INITIAL_USULAN: Usulan[] = [
     tglVerifikasi: "2026-07-06",
     tglPersetujuan: "2026-07-07",
     dokumen: "dokumen-perencanaan.pdf",
+    subKegiatanEntries: [
+      { subKegiatanId: "1", anggaran: 320000000 },
+    ],
   },
   {
     id: "USL-2026-006",
+    nomorUsulan: "USL/DIK/2026/006",
     skpd: "Dinas Pendidikan",
     tanggal: "2026-07-06",
     tahap: "Rancangan APBD",
@@ -203,9 +246,13 @@ export const INITIAL_USULAN: Usulan[] = [
     nilai: 180000000,
     status: "diajukan",
     dokumen: "buku-perpustakaan.pdf",
+    subKegiatanEntries: [
+      { subKegiatanId: "1", anggaran: 180000000 },
+    ],
   },
   {
     id: "USL-2026-007",
+    nomorUsulan: "USL/KES/2026/007",
     skpd: "Dinas Kesehatan",
     tanggal: "2026-07-06",
     tahap: "Rancangan APBD",
@@ -215,9 +262,13 @@ export const INITIAL_USULAN: Usulan[] = [
     jenis: "Sekda",
     tglVerifikasi: "2026-07-07",
     dokumen: "renovasi-puskesmas.pdf",
+    subKegiatanEntries: [
+      { subKegiatanId: "2", anggaran: 960000000 },
+    ],
   },
   {
     id: "USL-2026-008",
+    nomorUsulan: "USL/DIK/2026/008",
     skpd: "Dinas Pendidikan",
     tanggal: "2026-07-07",
     tahap: "Rancangan APBD",
@@ -225,6 +276,9 @@ export const INITIAL_USULAN: Usulan[] = [
     nilai: 430000000,
     status: "draft",
     dokumen: "penerangan-perpus.pdf",
+    subKegiatanEntries: [
+      { subKegiatanId: "1", anggaran: 430000000 },
+    ],
   },
 ];
 

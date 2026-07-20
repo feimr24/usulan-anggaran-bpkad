@@ -2,12 +2,17 @@
 
 import { FileText, Download, ExternalLink } from "lucide-react";
 import { rupiah } from "@/lib/format";
+import { SUB_KEGIATAN } from "@/lib/data";
 import { Usulan } from "@/lib/types";
 
 export default function DetailHighlight({ u }: { u: Usulan }) {
   function handleDownload() {
-    // Simulasi download dokumen
-    const content = `Dokumen Usulan Anggaran\n\nID Usulan: ${u.id}\nSKPD: ${u.skpd}\nTahap: ${u.tahap}\nTanggal: ${u.tanggal}\nKeterangan: ${u.ket}\nNilai: ${rupiah(u.nilai)}\nStatus: ${u.status}`;
+    const entriesText =
+      u.subKegiatanEntries?.map((e, i) => {
+        const sk = SUB_KEGIATAN.find((s) => s.id === e.subKegiatanId);
+        return `  ${i + 1}. ${sk?.nama || e.subKegiatanId}: ${rupiah(e.anggaran)}`;
+      }).join("\n") || "  -";
+    const content = `Dokumen Usulan Anggaran\n\nID Usulan: ${u.id}\nNomor Usulan: ${u.nomorUsulan || "-"}\nSKPD: ${u.skpd}\nTahap: ${u.tahap}\nTanggal: ${u.tanggal}\n\nRincian Anggaran:\n${entriesText}\n\nTotal: ${rupiah(u.nilai)}\nStatus: ${u.status}`;
     const blob = new Blob([content], { type: "text/plain" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -18,8 +23,12 @@ export default function DetailHighlight({ u }: { u: Usulan }) {
   }
 
   function handleView() {
-    // Simulasi view dokumen
-    const content = `=== DOKUMEN USULAN ANGGARAN ===\n\nID Usulan: ${u.id}\nSKPD: ${u.skpd}\nTahap: ${u.tahap}\nTanggal Usulan: ${u.tanggal}\n\nKeterangan:\n${u.ket}\n\nNilai Diusulkan: ${rupiah(u.nilai)}\nStatus: ${u.status}\n\nDokumen: ${u.dokumen || "Tidak ada dokumen"}`;
+    const entriesText =
+      u.subKegiatanEntries?.map((e, i) => {
+        const sk = SUB_KEGIATAN.find((s) => s.id === e.subKegiatanId);
+        return `  ${i + 1}. ${sk?.nama || e.subKegiatanId}: ${rupiah(e.anggaran)}`;
+      }).join("\n") || "  -";
+    const content = `=== DOKUMEN USULAN ANGGARAN ===\n\nID Usulan: ${u.id}\nNomor Usulan: ${u.nomorUsulan || "-"}\nSKPD: ${u.skpd}\nTahap: ${u.tahap}\nTanggal Usulan: ${u.tanggal}\n\nRincian Anggaran:\n${entriesText}\n\nTotal: ${rupiah(u.nilai)}\nStatus: ${u.status}\n\nDokumen: ${u.dokumen || "Tidak ada dokumen"}`;
     const blob = new Blob([content], { type: "text/plain" });
     const url = URL.createObjectURL(blob);
     window.open(url, "_blank");
@@ -37,6 +46,14 @@ export default function DetailHighlight({ u }: { u: Usulan }) {
         </div>
       </div>
       <div className="mt-3.5 grid grid-cols-2 gap-x-5 gap-y-3">
+        {u.nomorUsulan && (
+          <div className="col-span-2">
+            <div className="text-[10.5px] font-semibold uppercase tracking-[0.05em] text-muted-fg">
+              Nomor Usulan SKPD
+            </div>
+            <div className="mt-0.5 text-sm font-medium mono">{u.nomorUsulan}</div>
+          </div>
+        )}
         <div>
           <div className="text-[10.5px] font-semibold uppercase tracking-[0.05em] text-muted-fg">
             Tahap Usulan
@@ -49,15 +66,17 @@ export default function DetailHighlight({ u }: { u: Usulan }) {
           </div>
           <div className="mt-0.5 text-sm font-medium">{u.tanggal}</div>
         </div>
-        <div className="col-span-2">
-          <div className="text-[10.5px] font-semibold uppercase tracking-[0.05em] text-muted-fg">
-            Keterangan
+        {u.ket && (
+          <div className="col-span-2">
+            <div className="text-[10.5px] font-semibold uppercase tracking-[0.05em] text-muted-fg">
+              Keterangan
+            </div>
+            <div className="mt-0.5 text-sm font-medium">{u.ket}</div>
           </div>
-          <div className="mt-0.5 text-sm font-medium">{u.ket}</div>
-        </div>
+        )}
         <div className="col-span-2">
           <div className="text-[10.5px] font-semibold uppercase tracking-[0.05em] text-muted-fg">
-            Nominal Diusulkan
+            Total Anggaran
           </div>
           <div className="mt-0.5 text-lg font-bold text-primary">{rupiah(u.nilai)}</div>
         </div>

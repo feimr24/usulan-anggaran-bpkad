@@ -31,12 +31,21 @@ export interface Jadwal {
   aktif: boolean;
 }
 
+export type SubKegiatanEntryStatus = "approved" | "rejected" | "adjusted";
+
+export interface SubKegiatanEntry {
+  subKegiatanId: string;
+  anggaran: number;
+  status?: SubKegiatanEntryStatus;
+}
+
 export interface Usulan {
   id: string;
+  nomorUsulan?: string;
   skpd: string;
   tanggal: string;
   tahap: string;
-  ket: string;
+  ket?: string;
   nilai: number;
   status: StatusKey;
   jenis?: JenisPersetujuan;
@@ -46,7 +55,7 @@ export interface Usulan {
   catatanPersetujuan?: string;
   tglPersetujuan?: string;
   dokumen?: string;
-  subKegiatanId?: string;
+  subKegiatanEntries?: SubKegiatanEntry[];
 }
 
 export interface RoleDef {
@@ -78,6 +87,7 @@ export type ToastKind = "ok" | "err" | "info";
 
 export interface SubKegiatan {
   id: string;
+  kode?: string;
   nama: string;
   deskripsi: string;
 }

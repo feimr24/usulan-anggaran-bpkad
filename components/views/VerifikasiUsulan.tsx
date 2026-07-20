@@ -7,15 +7,8 @@ import { Card, EmptyState, SectionHead } from "@/components/ui";
 import Modal, { DialogBody, DialogFoot, DialogHead } from "@/components/Modal";
 import DetailHighlight from "@/components/DetailHighlight";
 import { rupiah, today } from "@/lib/format";
-import { JENIS } from "@/lib/data";
+import { JENIS, SUB_KEGIATAN } from "@/lib/data";
 import { JenisPersetujuan, Usulan } from "@/lib/types";
-
-// Map sub kegiatan ID ke nama untuk ditampilkan
-const SUB_KEGIATAN_MAP: Record<string, string> = {
-  "1": "Pengelolaan Pendidikan Dasar",
-  "2": "Penyediaan Alkes Fasyankes",
-  "3": "Pemeliharaan Jalan dan Drainase",
-};
 
 export default function VerifikasiUsulan() {
   const { usulanList, setUsulanList, toast } = useApp();
@@ -193,25 +186,47 @@ export default function VerifikasiUsulan() {
               <div className="space-y-4">
                 <DetailHighlight u={verifikasiFor} />
 
-                {/* Sub Kegiatan */}
+                {/* Sub Kegiatan Entries */}
                 <div className="rounded-lg border border-border bg-card p-4">
-                  <div className="flex items-center gap-[11px]">
+                  <div className="flex items-center gap-[11px] mb-3">
                     <span className="grid h-[34px] w-[34px] place-items-center rounded-lg bg-muted text-muted-fg">
                       <ClipboardList className="h-4 w-4" />
                     </span>
                     <div>
                       <div className="text-[10.5px] font-semibold uppercase tracking-[0.05em] text-muted-fg">
-                        Sub Kegiatan
-                      </div>
-                      <div className="mt-px text-sm font-semibold">
-                        {verifikasiFor.subKegiatanId ? (
-                          SUB_KEGIATAN_MAP[verifikasiFor.subKegiatanId] || `ID: ${verifikasiFor.subKegiatanId}`
-                        ) : (
-                          "Tidak tersedia"
-                        )}
+                        Rincian Sub Kegiatan
                       </div>
                     </div>
                   </div>
+                  {verifikasiFor.subKegiatanEntries && verifikasiFor.subKegiatanEntries.length > 0 ? (
+                    <div className="space-y-2">
+                      {verifikasiFor.subKegiatanEntries.map((entry, idx) => {
+                        const sk = SUB_KEGIATAN.find((s) => s.id === entry.subKegiatanId);
+                        return (
+                          <div
+                            key={idx}
+                            className="flex items-center justify-between rounded-lg border border-border bg-muted/50 px-3 py-2"
+                          >
+                            <div>
+                              <div className="text-sm font-medium">
+                                {sk?.nama || `ID: ${entry.subKegiatanId}`}
+                              </div>
+                              {sk?.kode && (
+                                <div className="text-xs text-muted-fg">{sk.kode}</div>
+                              )}
+                            </div>
+                            <div className="text-sm font-semibold">{rupiah(entry.anggaran)}</div>
+                          </div>
+                        );
+                      })}
+                      <div className="flex items-center justify-between border-t border-border pt-2 mt-2">
+                        <span className="text-sm font-semibold">Total</span>
+                        <span className="text-sm font-bold text-primary">{rupiah(verifikasiFor.nilai)}</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-sm text-muted-fg">Tidak tersedia</div>
+                  )}
                 </div>
 
                 {/* Form verifikasi */}

@@ -6,6 +6,10 @@ export function rupiah(n: number): string {
   }).format(n || 0);
 }
 
+export function parseNominal(raw: string): number {
+  return Number(raw.replace(/[^\d]/g, "")) || 0;
+}
+
 export function today(): string {
   return new Date().toISOString().slice(0, 10);
 }
