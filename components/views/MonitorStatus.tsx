@@ -90,11 +90,9 @@ export default function MonitorStatus() {
       return;
     }
 
-    const validEntries = entries.filter(
-      (e) => e.subKegiatanId && parseNominal(e.anggaran) > 0
-    );
+    const validEntries = entries.filter((e) => e.subKegiatanId);
     if (validEntries.length === 0) {
-      toast("Tambahkan minimal satu sub kegiatan dengan anggaran", "err");
+      toast("Tambahkan minimal satu sub kegiatan", "err");
       return;
     }
 
@@ -132,9 +130,9 @@ export default function MonitorStatus() {
               toast("Tidak ada usulan yang bisa di-export", "err");
               return;
             }
-            const header = "ID,Nomor Usulan,SKPD,Tanggal,Tahap,Nilai,Status,Jenis\n";
+            const header = "ID,Nomor Usulan,SKPD,Tanggal,Tahap,Dokumen,Jenis,Diusulkan,Disetujui,Status\n";
             const csvRows = usulanDiajukan.map((u) =>
-              `"${u.id}","${u.nomorUsulan || ""}","${u.skpd}","${u.tanggal}","${u.tahap}",${u.nilai},"${u.status}","${u.jenis || ""}"`
+              `"${u.id}","${u.nomorUsulan || ""}","${u.skpd}","${u.tanggal}","${u.tahap}","${u.dokumen || ""}","${u.jenis || ""}",${u.nilai},${u.nominalFinal ?? ""},"${u.status}"`
             ).join("\n");
             const blob = new Blob([header + csvRows], { type: "text/csv" });
             const url = URL.createObjectURL(blob);
@@ -189,17 +187,22 @@ export default function MonitorStatus() {
           <table className="w-full border-collapse">
             <thead>
               <tr>
-                {["Tanggal", "Tahap", "Keterangan", "Jenis", "Nilai", "Status", ""].map(
-                  (h, i) => (
-                    <th
-                      key={i}
-                      className={`border-b border-border px-4 py-[11px] text-left text-xs font-semibold uppercase tracking-[0.04em] text-muted-fg ${
-                        i === 4 || i === 6 ? "text-right" : ""
-                      }`}
-                    >
-                      {i === 6 ? "Aksi" : h}
-                    </th>
-                  )
+                {["Tanggal", "Tahap", "Dokumen", "Jenis", "Diusulkan", "Disetujui", "Status", ""].map(
+                  (h, i) => {
+                    const align =
+                      i === 4 || i === 5 ? "text-right"
+                      : i === 2 || i === 3 || i === 6 ? "text-center"
+                      : i === 7 ? "text-right"
+                      : "text-left";
+                    return (
+                      <th
+                        key={i}
+                        className={`border-b border-border px-4 py-[11px] text-xs font-semibold uppercase tracking-[0.04em] text-muted-fg ${align}`}
+                      >
+                        {i === 7 ? "Aksi" : h}
+                      </th>
+                    );
+                  }
                 )}
               </tr>
             </thead>
@@ -209,10 +212,28 @@ export default function MonitorStatus() {
                   <tr key={u.id} className="border-b border-[hsl(34_16%_92%)] last:border-none hover:bg-[hsl(36_24%_97%)]">
                     <td className="px-4 py-3 text-sm">{u.tanggal}</td>
                     <td className="px-4 py-3 text-sm text-muted-fg">{u.tahap}</td>
-                    <td className="max-w-[220px] truncate px-4 py-3 text-sm text-muted-fg">
-                      {u.ket || u.nomorUsulan || "-"}
+                    <td className="px-4 py-3 text-center">
+                      {u.dokumen ? (
+                        <button
+                          onClick={() => {
+                            const blob = new Blob([""], { type: "application/pdf" });
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement("a");
+                            a.href = url;
+                            a.download = u.dokumen!;
+                            a.click();
+                            URL.revokeObjectURL(url);
+                          }}
+                          className="inline-flex items-center gap-1 text-sm font-medium text-primary underline-offset-2 hover:underline"
+                        >
+                          <Download className="h-3.5 w-3.5" />
+                          Dokumen
+                        </button>
+                      ) : (
+                        <span className="text-sm text-muted-fg">—</span>
+                      )}
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3 text-center">
                       {u.jenis ? (
                         <span className="inline-flex items-center rounded-full border border-fuchsia-200 bg-fuchsia-50 px-[9px] py-[3px] text-xs font-semibold text-fuchsia-800">
                           {u.jenis}
@@ -222,7 +243,10 @@ export default function MonitorStatus() {
                       )}
                     </td>
                     <td className="px-4 py-3 text-right text-sm">{rupiah(u.nilai)}</td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3 text-right text-sm">
+                      {u.nominalFinal !== undefined ? rupiah(u.nominalFinal) : <span className="text-muted-fg">—</span>}
+                    </td>
+                    <td className="px-4 py-3 text-center">
                       <Badge status={u.status} />
                     </td>
                     <td className="px-4 py-3 text-right">
@@ -239,7 +263,7 @@ export default function MonitorStatus() {
                   </tr>
                 ))
               ) : (
-                <EmptyState colSpan={7} message="Tidak ada usulan pada status ini." />
+                <EmptyState colSpan={8} message="Tidak ada usulan pada status ini." />
               )}
             </tbody>
           </table>
