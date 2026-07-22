@@ -1,0 +1,168 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import "remixicon/fonts/remixicon.css";
+
+@layer base {
+  :root {
+    --bg: 40 33% 99%;
+    --fg: 30 8% 18%;
+    --card: 0 0% 100%;
+    --muted: 36 20% 95%;
+    --muted-fg: 30 6% 46%;
+    --border: 34 16% 88%;
+    --input: 34 16% 84%;
+    --primary: 8 58% 44%;
+    --primary-fg: 40 33% 99%;
+    --sidebar: 34 20% 97%;
+    --sidebar-border: 34 16% 89%;
+    --sidebar-accent: 36 24% 92%;
+    --ring: 8 58% 44%;
+    --danger: 8 62% 46%;
+    --success: 150 50% 30%;
+    --radius: 0.5rem;
+
+    --background: 40 33% 99%;
+    --foreground: 30 8% 18%;
+    --card-foreground: 30 8% 18%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 30 8% 18%;
+    --primary-foreground: 40 33% 99%;
+    --secondary: 36 20% 95%;
+    --secondary-foreground: 30 8% 18%;
+    --accent: 36 24% 92%;
+    --accent-foreground: 30 8% 18%;
+    --destructive: 8 62% 46%;
+    --destructive-foreground: 40 33% 99%;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    background: hsl(var(--bg));
+    color: hsl(var(--fg));
+    font-family: "Inter", system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+}
+
+@layer base {
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+  }
+
+  h1, h2, h3, h4, p {
+    margin: 0;
+  }
+
+  table {
+    font-variant-numeric: tabular-nums;
+  }
+
+  .mono {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  }
+
+  input, select, textarea {
+    width: 100%;
+    font-family: inherit;
+    font-size: 14px;
+    color: hsl(var(--fg));
+    background: hsl(var(--card));
+    border: 1px solid hsl(var(--input));
+    border-radius: 8px;
+    padding: 0 12px;
+    height: 42px;
+    outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+
+  textarea {
+    padding: 9px 12px;
+    height: auto;
+    resize: vertical;
+    line-height: 1.5;
+  }
+
+  input:focus, select:focus, textarea:focus {
+    border-color: hsl(var(--ring));
+    box-shadow: 0 0 0 3px hsl(8 58% 44% / 0.16);
+  }
+
+  input[readonly], .autofill {
+    background: hsl(var(--muted));
+    color: hsl(var(--muted-fg));
+  }
+
+  select {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%238a8178' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 11px center;
+    padding-right: 34px;
+    cursor: pointer;
+  }
+
+  label {
+    display: block;
+    font-size: 13px;
+    font-weight: 500;
+    margin-bottom: 7px;
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: hsl(34 16% 84%);
+    border-radius: 999px;
+  }
+}
+
+@layer utilities {
+  .shadow-sm2 {
+    box-shadow: 0 1px 2px hsl(30 10% 20% / .06);
+  }
+
+  .shadow-lg2 {
+    box-shadow: 0 10px 30px hsl(30 10% 20% / .12);
+  }
+
+  .rounded-xl2 {
+    border-radius: 12px;
+  }
+
+  .animate-fade {
+    animation: fade .4s cubic-bezier(.22,1,.36,1);
+  }
+
+  .animate-dialogin {
+    animation: dialogin .24s cubic-bezier(.22,1,.36,1);
+  }
+
+  .animate-toastin {
+    animation: toastin .3s cubic-bezier(.22,1,.36,1);
+  }
+}
+
+@keyframes fade {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes dialogin {
+  from { opacity: 0; transform: scale(.96) translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes toastin {
+  from { opacity: 0; transform: translateX(20px); }
+  to { opacity: 1; transform: none; }
+}
